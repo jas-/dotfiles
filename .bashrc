@@ -144,6 +144,7 @@ function startvm()
   local vm="${@}"
 
   # Start the VM requeste as a headless node
+  arg="${arg:=${wldcrd}}"
   VBoxManage startvm "${vm}" --type headless 2> /dev/null
 }
 
@@ -173,7 +174,10 @@ log_ufw=/var/log/ufw.log
 # Function for filtering outbound comms
 function ufw_out
 {
-  for host in $(awk -f ${parse_ufw} ${log_ufw} | awk '$4 == "OUT" && $7 !~ /^192|^127/{print $7}' | sort -u); do
+  wldcrd=".*"
+  arg="${1}"
+  arg="${arg:=${wldcrd}}"
+  for host in $(awk -f ${parse_ufw} ${log_ufw} | awk -v a="${arg}" '$6 ~ a && $4 == "OUT" && $7 !~ /^192|^127/{print $7}' | sort -u); do
     lookup=( $(host ${host} 2>/dev/null | tr ' ' '^') )
     [[ "${lookup[@]}" =~ NXDOMAIN ]] &&
       result=" - Lookup failed" ||
@@ -185,7 +189,10 @@ function ufw_out
 # Function for filtering inbound comms
 function ufw_in
 {
-  for host in $(awk -f ${parse_ufw} ${log_ufw} | awk '$4 == "IN" && $9 !~ /^192|^127/{print $9}' | sort -u); do
+  wldcrd=".*"
+  arg="${1}"
+  arg="${arg:=${wldcrd}}"
+  for host in $(awk -f ${parse_ufw} ${log_ufw} | awk -v a="${arg}" '$6 ~ a && $4 == "IN" && $9 !~ /^192|^127/{print $9}' | sort -u); do
     lookup=( $(host ${host} 2>/dev/null | tr ' ' '^') )
     [[ "${lookup[@]}" =~ NXDOMAIN ]] &&
       result=" - Lookup failed" ||
