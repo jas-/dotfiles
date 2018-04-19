@@ -200,3 +200,32 @@ function ufw_in
     echo "${host} ${result}"
   done
 }
+
+
+# Helper for OpenSCAP related stuff
+function gen_scap()
+{
+
+  if [ "${1}" == "" ]; then
+    files=( $(ls /usr/share/xml/scap/ssg/content/*.xml) )
+  else
+    files=( ${@} )
+  fi
+
+  for file in ${files[@]}; do
+
+    profiles=( $(oscap info ${file} | sed -n '/^Profiles:/,/^Referenced check files:/p' | egrep -v 'Profiles:|Referenced check files:' | tr '\n' ' ') )
+
+    name="$(basename ${file} | sed '/.xml/d')"
+    log_path="logs/${name}"
+    script_path="scripts/${name}"
+
+    mkdir -p ${log_path}
+    mkdir -p ${script_path}
+
+    for profile in ${profiles[@]}; do
+      oscap xccdf generate fix --template urn:xccdf:fix:script:sh --profile ${profile} --output ${script_path}/${profile}.sh ${file}
+      #oscap xccdf eval --fetch-remote-resources --profile ${profile} ${file} &> ${log_path}/${profile}.log
+    done
+  done
+}
