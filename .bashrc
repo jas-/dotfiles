@@ -201,6 +201,17 @@ function ufw_in
   done
 }
 
+# Function for filtering outbound comms
+function readufw
+{
+  wldcrd=".*"
+  arg="${1}"
+  arg="${arg:=${wldcrd}}"
+  for host in $(awk -f ${parse_ufw} ${log_ufw} | awk -v a="${arg}" '$6 ~ a && $7 !~ /^192|^127/{gsub(/\n/, "", $0);printf("%s:%d %s %s:%d\n", $7, $8, $4, $9, $10)}' | sort -u); do
+    echo "${host}"
+  done
+}
+
 
 # Helper for OpenSCAP related stuff
 function gen_scap()
