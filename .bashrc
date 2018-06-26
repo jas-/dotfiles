@@ -1,4 +1,4 @@
-# ~/.bashrc: executed by bash(1) for non-login shells.
+# ~/.bashrc: executed by bash(1) for non-login shells
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
@@ -144,10 +144,18 @@ function startvm()
   local vm="${@}"
 
   # Start the VM requeste as a headless node
-  arg="${arg:=${wldcrd}}"
   VBoxManage startvm "${vm}" --type headless 2> /dev/null
 }
 
+# Function to poweroff headless VM
+function stopvm()
+{
+  # Capture arg
+  local vm="${@}"
+
+  # Stop the VM
+  VBoxManage controlvm "${vm}" poweroff
+}
 
 # Function to handle git commits w/ GPG key signing
 function commit() {
@@ -157,11 +165,6 @@ function commit() {
 # Function to handle signing new tags w/ GPG key
 function tag() {
   git tag -u 9ACC8A57 -a ${1} -m "v${1}"
-}
-
-# Function handle git pushes w/ GPG key signing
-function push() {
-  git push --tags origin "${1}"
 }
 
 
@@ -207,7 +210,7 @@ function readufw
   wldcrd=".*"
   arg="${1}"
   arg="${arg:=${wldcrd}}"
-  for host in $(awk -f ${parse_ufw} ${log_ufw} | awk -v a="${arg}" '$6 ~ a && $7 !~ /^192|^127/{gsub(/\n/, "", $0);printf("%s:%d %s %s:%d\n", $7, $8, $4, $9, $10)}' | sort -u); do
+  for host in $(awk -f ${parse_ufw} ${log_ufw} | awk -v a="${arg}" '$6 ~ a && $7 !~ /^192|^127/{IFS=" "}{if ($4 == "OUT"){op=" > "}else{op=" < "}x=$7":"$8" "op" "$9":"$10;print x}' | sort -u); do
     echo "${host}"
   done
 }
@@ -238,5 +241,30 @@ function gen_scap()
       oscap xccdf generate fix --template urn:xccdf:fix:script:sh --profile ${profile} --output ${script_path}/${profile}.sh ${file}
       #oscap xccdf eval --fetch-remote-resources --profile ${profile} ${file} &> ${log_path}/${profile}.log
     done
+  done
+}
+
+
+function eject()
+{
+  local mounts=( ${@} )
+
+  for mount in ${mounts[@]}; do
+
+    [ ! -d ${mount} ] && continue
+
+    pids=( $(fuser -c ${mount} 2>/dev/null) )
+
+    [ ${#pids[@]} -gt 0 ] && continue
+
+    lvms=($(lvscan | awk '{print $2}' | sed "s|'||g" | sed "s|\(/dev/\)\(.*\)/\(.*\)|\1mapper/\2-\3|g"))
+
+    umount ${mount} 2>/dev/null
+
+    if [ ${#lvms[@]} -gt 0 ]; then
+      for mt in ${lvms[@]}; do
+        [ "${mount}" == "${mt}" ] && lvchange -an ${mt} 2>/dev/null
+      done
+    fi
   done
 }
