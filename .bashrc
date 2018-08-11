@@ -181,11 +181,13 @@ function ufw_out
   arg="${1}"
   arg="${arg:=${wldcrd}}"
   for host in $(awk -f ${parse_ufw} ${log_ufw} | awk -v a="${arg}" '$6 ~ a && $4 == "OUT" && $7 !~ /^192|^127/{print $7}' | sort -u); do
-    lookup=( $(host ${host} 2>/dev/null | tr ' ' '^') )
-    [[ "${lookup[@]}" =~ NXDOMAIN ]] &&
-      result=" - Lookup failed" ||
-      result="$(echo "${lookup[@]}" | tr '^' ' ' | awk '{print $5}')"
-    echo "${host} ${result}"
+     whois -h v4.whois.cymru.com -v ${host} 2>/dev/null | 
+       awk '$0 ~ /^[0-9]/{for(i=13;i<=NF;i++){col=col $i}}{if($0 ~ /^[0-9]+/)printf("%s %s %s\n", $3, $1, col)}' 2>/dev/null
+#    lookup=( $(host ${host} 2>/dev/null | tr ' ' '^') )
+#    [[ "${lookup[@]}" =~ NXDOMAIN ]] &&
+#      result=" - Lookup failed" ||
+#      result="$(echo "${lookup[@]}" | tr '^' ' ' | awk '{print $5}')"
+#    echo "${host} ${result}"
   done
 }
 
@@ -196,11 +198,13 @@ function ufw_in
   arg="${1}"
   arg="${arg:=${wldcrd}}"
   for host in $(awk -f ${parse_ufw} ${log_ufw} | awk -v a="${arg}" '$6 ~ a && $4 == "IN" && $9 !~ /^192|^127/{print $9}' | sort -u); do
-    lookup=( $(host ${host} 2>/dev/null | tr ' ' '^') )
-    [[ "${lookup[@]}" =~ NXDOMAIN ]] &&
-      result=" - Lookup failed" ||
-      result="$(echo "${lookup[@]}" | tr '^' ' ' | awk '{print $5}')"
-    echo "${host} ${result}"
+     whois -h v4.whois.cymru.com -v ${host} 2>/dev/null | 
+       awk '$0 ~ /^[0-9]/{for(i=13;i<=NF;i++){col=col $i}}{if($0 ~ /^[0-9]+/)printf("%s %s %s\n", $3, $1, col)}' 2>/dev/null
+#    lookup=( $(host ${host} 2>/dev/null | tr ' ' '^') )
+#    [[ "${lookup[@]}" =~ NXDOMAIN ]] &&
+#      result=" - Lookup failed" ||
+#      result="$(echo "${lookup[@]}" | tr '^' ' ' | awk '{print $5}')"
+#    echo "${host} ${result}"
   done
 }
 
